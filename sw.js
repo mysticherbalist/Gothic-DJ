@@ -1,7 +1,7 @@
 
-const CACHE_NAME = "goth-dj-cache-v1";
+const CACHE_NAME = "goth-dj-cache-v2";
 const urlsToCache = [
-  "gothic_dj_master_mobile.html",
+  "index.html",
   "manifest.json"
 ];
 
