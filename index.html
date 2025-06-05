@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>⸸ GOTH DJ // MASTER EDITION ⸸</title>
+  <style>
+
+#splash {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  flex-direction: column;
+}
+
+#loader svg {
+  margin-bottom: 20px;
+}
+
+#loader p {
+  color: #0ff;
+  font-size: 1.2rem;
+  font-family: 'VT323', monospace;
+  animation: glitch 1s infinite alternate;
+}
+
+    * {
+      box-sizing: border-box;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+    body {
+      font-family: 'VT323', monospace;
+      background: #000;
+      color: #0ff;
+      padding: 30px;
+      text-align: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 255, 0, 0.03),
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.06) 4px
+      );
+      z-index: 9999;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #0ff;
+      text-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 20px #f0f;
+      animation: glitch 1s infinite;
+    }
+
+    @keyframes glitch {
+      0% { transform: none; }
+      20% { transform: translateX(-1px); }
+      40% { transform: translateX(1px); }
+      60% { transform: translateY(-1px); }
+      80% { transform: translateY(1px); }
+      100% { transform: none; }
+    }
+
+    input, button, select {
+      background: #111;
+      color: #0ff;
+      border: 1px solid #8a2be2;
+      padding: 8px;
+      margin: 5px;
+      font-size: 1.1rem;
+    }
+
+    .player-block {
+      background: #111;
+      border: 1px solid #444;
+      margin: 10px;
+      padding: 10px;
+    }
+
+    audio {
+      width: 100%; max-width: 400px;
+      background-color: #000;
+    }
+
+    .visualizer {
+      width: 100%; max-width: 400px;
+      height: 60px;
+      background: #111;
+      border: 1px dashed #333;
+      margin-top: 5px;
+    }
+
+    .controls {
+      margin: 20px auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      width: 90%;
+      max-width: 800px;
+      padding: 15px;
+      background: #0b0b0b;
+      border: 2px dashed #600060;
+    }
+
+    .theme-toggle {
+      margin-bottom: 20px;
+    }
+  </style>
+
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log("Service Worker registered"));
+    }
+  
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+  }, 2200);
+});
+
+</script>
+</head>
+<body>
+
+<div id="splash">
+  <div id="loader">
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="40" stroke="#0ff" stroke-width="4" fill="none" />
+      <circle cx="50" cy="50" r="30" stroke="#f0f" stroke-width="2" fill="none" stroke-dasharray="150" stroke-dashoffset="0">
+        <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="50" r="2" fill="#fff" />
+    </svg>
+    <p>Loading decks...</p>
+  </div>
+</div>
+
+
+<h1>⸸ GOTH DJ // MASTER EDITION ⸸</h1>
+
+<div class="controls theme-toggle">
+  <label>🎨 Theme:
+    <select id="themeSwitcher" onchange="switchTheme(this.value)">
+      <option value="crt">🟢 CRT Green</option>
+      <option value="matrix">🟩 Matrix</option>
+      <option value="amber">🟠 Amber</option>
+      <option value="blood">🔴 Blood Red</option>
+    </select>
+  </label>
+</div>
+
+<div class="controls">
+  <button onclick="addDeck()">➕ Add Deck</button>
+  <button onclick="removeDeck()">➖ Remove Deck</button>
+  <button onclick="startSmartAutoMix()">🎛 Smart Auto Mix</button>
+  <button onclick="randomPlay()">🎲 Randomize Track</button>
+</div>
+
+<div id="players">
+<div class="controls">
+  <label for="crossfader">🎚 Master Crossfader:</label><br>
+  <input type="range" id="crossfader" min="0" max="100" value="50" oninput="updateCrossfade()">
+</div>
+
+<script>
+  function updateCrossfade() {
+    const fader = document.getElementById("crossfader").value;
+    for (let i = 1; i <= currentDecks; i++) {
+      const audio = document.getElementById(`audio${i}`);
+      if (audio && !audio.paused) {
+        const volume = i % 2 === 0 ? (100 - fader) / 100 : fader / 100;
+        audio.volume = volume;
+      }
+    }
+  }
+
+  let currentDecks = 4;
+  const maxDecks = 12;
+  const playersDiv = document.getElementById('players');
+  let autoMixInterval = null;
+
+  function createDeck(i) {
+    const block = document.createElement('div');
+    block.className = 'player-block';
+    block.id = `deck${i}`;
+    block.innerHTML = \`
+      <h3>Deck \${i}</h3>
+      <input type="file" accept="audio/mp3" onchange="loadMP3(event, \${i})">
+      <audio id="audio\${i}" controls></audio>
+      <canvas class="visualizer" id="visual\${i}"></canvas>
+    \`;
+    playersDiv.appendChild(block);
+  }
+
+  function loadMP3(event, index) {
+    const file = event.target.files[0];
+    const audio = document.getElementById(\`audio\${index}\`);
+    if (file) {
+      audio.src = URL.createObjectURL(file);
+      audio.load();
+      audio.onplay = () => visualize(audio, index);
+    }
+  }
+
+  function visualize(audio, index) {
+    const canvas = document.getElementById(\`visual\${index}\`);
+    const ctx = canvas.getContext('2d');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaElementSource(audio);
+    const analyser = audioCtx.createAnalyser();
+
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyser.fftSize = 64;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function draw() {
+      requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i];
+        ctx.fillStyle = "#0ff";
+        ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+        x += barWidth + 1;
+      }
+    }
+
+    draw();
+  }
+
+  function addDeck() {
+    if (currentDecks < maxDecks) {
+      currentDecks++;
+      createDeck(currentDecks);
+    } else {
+      alert("Maximum decks reached!");
+    }
+  }
+
+  function removeDeck() {
+    if (currentDecks > 1) {
+      const lastDeck = document.getElementById(\`deck\${currentDecks}\`);
+      if (lastDeck) {
+        lastDeck.remove();
+        currentDecks--;
+      }
+    } else {
+      alert("At least one deck must remain!");
+    }
+  }
+
+  function stopAll() {
+    for (let i = 1; i <= currentDecks; i++) {
+      const audio = document.getElementById(\`audio\${i}\`);
+      if (audio) audio.pause();
+    }
+  }
+
+  function randomPlay() {
+    const randomIndex = Math.floor(Math.random() * currentDecks) + 1;
+    const audio = document.getElementById(\`audio\${randomIndex}\`);
+    if (audio && audio.src) {
+      stopAll();
+      audio.play();
+    }
+  }
+
+  function startSmartAutoMix() {
+    if (autoMixInterval) {
+      clearInterval(autoMixInterval);
+      autoMixInterval = null;
+      alert("Auto Mix Stopped");
+      return;
+    }
+
+    let current = 1;
+    autoMixInterval = setInterval(() => {
+      stopAll();
+      const audio = document.getElementById(\`audio\${current}\`);
+      if (audio && audio.src) audio.play();
+      current = current % currentDecks + 1;
+    }, 30000);
+  }
+
+  function switchTheme(theme) {
+    let root = document.documentElement.style;
+    switch (theme) {
+      case 'crt':
+        document.body.style.color = '#0f0';
+        break;
+      case 'matrix':
+        document.body.style.color = '#00ff88';
+        break;
+      case 'amber':
+        document.body.style.color = '#ff9933';
+        break;
+      case 'blood':
+        document.body.style.color = '#ff0033';
+        break;
+    }
+  }
+
+  for (let i = 1; i <= currentDecks; i++) {
+    createDeck(i);
+  }
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+  }, 2200);
+});
+
+</script>
+
+</body>
+</html>
