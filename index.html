@@ -2,10 +2,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>⸸ GOTH DJ // YOUTUBE EDITION ⸸</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <title>⸸ GOTH DJ // BUGFIX v2.1.1 ⸸</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
@@ -13,71 +13,13 @@
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-    * { box-sizing: border-box; }
     body {
-      font-family: 'VT323', monospace;
-      background: #000;
+      font-family: monospace;
+      background: black;
       color: #0ff;
-      padding: 30px;
       text-align: center;
-    }
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none;
-      background: repeating-linear-gradient(to bottom, rgba(0,255,0,0.03), rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.06) 4px);
-      z-index: 9999;
-    }
-    h1 {
-      font-size: 2rem;
-      text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
-      animation: glitch 1s infinite;
-    }
-    @keyframes glitch {
-      0%, 100% { transform: none; }
-      25% { transform: translateX(-1px); }
-      50% { transform: translateX(1px); }
-      75% { transform: translateY(-1px); }
-    }
-    input, button, select {
-      background: #111;
-      color: #0ff;
-      border: 1px solid #8a2be2;
-      padding: 8px;
-      margin: 5px;
-      font-size: 1rem;
-    }
-    .player-block {
-      background: #111;
-      border: 1px solid #444;
-      margin: 10px;
-      padding: 10px;
-    }
-    audio {
-      width: 100%;
-      max-width: 400px;
-    }
-    .visualizer {
-      width: 100%;
-      max-width: 400px;
-      height: 60px;
-      background: #111;
-      border: 1px dashed #333;
-      margin-top: 5px;
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin: 20px auto;
-      width: 90%;
-      max-width: 800px;
-      padding: 15px;
-      background: #0b0b0b;
-      border: 2px dashed #600060;
+      margin: 0;
+      padding: 0;
     }
     #splash {
       position: fixed;
@@ -86,20 +28,24 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 99999;
+      z-index: 9999;
       flex-direction: column;
     }
-    #loader svg { margin-bottom: 20px; }
-    #loader p {
-      color: #0ff;
-      font-size: 1.2rem;
-      animation: glitch 1s infinite alternate;
+    .controls {
+      margin: 10px;
     }
+    .player-block {
+      background: #111;
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #333;
+    }
+    iframe { max-width: 100%; }
   </style>
 </head>
 <body>
 <div id="splash">
-  <div id="loader">
+  <div>
     <svg width="100" height="100" viewBox="0 0 100 100">
       <circle cx="50" cy="50" r="40" stroke="#0ff" stroke-width="4" fill="none" />
       <circle cx="50" cy="50" r="30" stroke="#f0f" stroke-width="2" fill="none" stroke-dasharray="150" stroke-dashoffset="0">
@@ -111,23 +57,16 @@
   </div>
 </div>
 
-<h1>⸸ GOTH DJ // YOUTUBE ENABLED ⸸</h1>
+<h1>⸸ GOTH DJ v2.1.1 // Bugfix ⸸</h1>
 <div class="controls">
-  <button onclick="addDeck()">➕ Add Deck</button>
-  <button onclick="removeDeck()">➖ Remove Deck</button>
-  <button onclick="startSmartAutoMix()">🎛 Auto Mix</button>
-  <button onclick="randomPlay()">🎲 Random Track</button>
-</div>
-<div class="controls">
-  <label for="crossfader">🎚 Crossfader:</label><br>
-  <input type="range" id="crossfader" min="0" max="100" value="50" oninput="updateCrossfade()">
+  <button onclick="addDeck()">Add Deck</button>
+  <button onclick="removeDeck()">Remove Deck</button>
 </div>
 <div id="players"></div>
 
 <script>
 let currentDecks = 4;
 let maxDecks = 12;
-let autoMixInterval = null;
 const playersDiv = document.getElementById("players");
 
 function createDeck(i) {
@@ -145,7 +84,6 @@ function createDeck(i) {
       <label><input type="checkbox" id="ytAudioOnly\${i}" onchange="toggleYTVisual(\${i})"> Audio Only</label>
     </div>
     <audio id="audio\${i}" controls></audio>
-    <canvas class="visualizer" id="visual\${i}"></canvas>
   \`;
   playersDiv.appendChild(block);
 }
@@ -156,98 +94,7 @@ function loadMP3(event, index) {
   if (file) {
     audio.src = URL.createObjectURL(file);
     audio.load();
-    audio.onplay = () => visualize(audio, index);
   }
-}
-
-function visualize(audio, index) {
-  const canvas = document.getElementById(`visual${index}`);
-  const ctx = canvas.getContext("2d");
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const source = audioCtx.createMediaElementSource(audio);
-  const analyser = audioCtx.createAnalyser();
-  source.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  analyser.fftSize = 64;
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  function draw() {
-    requestAnimationFrame(draw);
-    analyser.getByteFrequencyData(dataArray);
-    ctx.fillStyle = "#111";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const barWidth = (canvas.width / bufferLength) * 2.5;
-    let x = 0;
-    for (let i = 0; i < bufferLength; i++) {
-      const barHeight = dataArray[i];
-      ctx.fillStyle = "#0ff";
-      ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
-      x += barWidth + 1;
-    }
-  }
-
-  draw();
-}
-
-function updateCrossfade() {
-  const fader = document.getElementById("crossfader").value;
-  for (let i = 1; i <= currentDecks; i++) {
-    const audio = document.getElementById(`audio${i}`);
-    if (audio && !audio.paused) {
-      const volume = i % 2 === 0 ? (100 - fader) / 100 : fader / 100;
-      audio.volume = volume;
-    }
-  }
-}
-
-function addDeck() {
-  if (currentDecks < maxDecks) {
-    currentDecks++;
-    createDeck(currentDecks);
-  }
-}
-
-function removeDeck() {
-  if (currentDecks > 1) {
-    const lastDeck = document.getElementById(`deck${currentDecks}`);
-    if (lastDeck) {
-      lastDeck.remove();
-      currentDecks--;
-    }
-  }
-}
-
-function stopAll() {
-  for (let i = 1; i <= currentDecks; i++) {
-    const audio = document.getElementById(`audio${i}`);
-    if (audio) audio.pause();
-  }
-}
-
-function randomPlay() {
-  const randomIndex = Math.floor(Math.random() * currentDecks) + 1;
-  const audio = document.getElementById(`audio${randomIndex}`);
-  if (audio && audio.src) {
-    stopAll();
-    audio.play();
-  }
-}
-
-function startSmartAutoMix() {
-  if (autoMixInterval) {
-    clearInterval(autoMixInterval);
-    autoMixInterval = null;
-    alert("Auto Mix Stopped");
-    return;
-  }
-  let current = 1;
-  autoMixInterval = setInterval(() => {
-    stopAll();
-    const audio = document.getElementById(`audio${current}`);
-    if (audio && audio.src) audio.play();
-    current = current % currentDecks + 1;
-  }, 30000);
 }
 
 function loadYouTube(index) {
@@ -267,7 +114,7 @@ function loadYouTube(index) {
       alert("Invalid URL");
       return;
     }
-    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+    iframe.src = `https://www.youtube.com/embed/${videoId}`;
     wrapper.style.display = "block";
   } else {
     alert("Not a YouTube URL");
@@ -281,13 +128,29 @@ function toggleYTVisual(index) {
   iframe.style.height = isAudioOnly ? "1px" : "200px";
 }
 
-window.addEventListener("load", () => {
+function addDeck() {
+  if (currentDecks < maxDecks) {
+    currentDecks++;
+    createDeck(currentDecks);
+  }
+}
+
+function removeDeck() {
+  if (currentDecks > 1) {
+    const lastDeck = document.getElementById(`deck${currentDecks}`);
+    if (lastDeck) {
+      lastDeck.remove();
+      currentDecks--;
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   for (let i = 1; i <= currentDecks; i++) createDeck(i);
   setTimeout(() => {
     document.getElementById("splash").style.display = "none";
-  }, 2200);
+  }, 2000);
 });
 </script>
-
 </body>
 </html>
