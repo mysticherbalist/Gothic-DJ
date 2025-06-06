@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>⸸ GOTH DJ v1.2 ⸸</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => console.log("SW registered"));
+    }
+  </script>
+  <style>
+    body { background: black; color: #0ff; font-family: monospace; text-align: center; margin: 0; padding: 0; }
+    .deck { border: 1px solid #0ff; margin: 10px; padding: 10px; background: #111; }
+    .controls { margin: 10px; }
+    #splash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: center; align-items: center;
+      flex-direction: column; background: #000; z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div id="splash"><h1>⸸ Loading GOTH DJ ⸸</h1></div>
+
+  <h1>⸸ GOTH DJ v1.2 ⸸</h1>
+  <div class="controls">
+    <button onclick="addDeck()">Add Deck</button>
+    <button onclick="removeDeck()">Remove Deck</button>
+  </div>
+  <div id="players"></div>
+
+  <script>
+    let currentDecks = 4;
+    let maxDecks = 12;
+    const playersDiv = document.getElementById("players");
+
+    function createDeck(i) {
+      const block = document.createElement('div');
+      block.className = 'deck';
+      block.id = 'deck' + i;
+      block.innerHTML = \`
+        <h3>Deck \${i}</h3>
+        <input type="file" accept="audio/*" onchange="loadAudio(event, \${i})"><br>
+        <audio id="audio\${i}" controls></audio>
+      \`;
+      playersDiv.appendChild(block);
+    }
+
+    function loadAudio(event, index) {
+      const file = event.target.files[0];
+      const audio = document.getElementById("audio" + index);
+      if (file) {
+        audio.src = URL.createObjectURL(file);
+        audio.load();
+      }
+    }
+
+    function addDeck() {
+      if (currentDecks < maxDecks) {
+        currentDecks++;
+        createDeck(currentDecks);
+      }
+    }
+
+    function removeDeck() {
+      if (currentDecks > 1) {
+        const lastDeck = document.getElementById('deck' + currentDecks);
+        if (lastDeck) {
+          lastDeck.remove();
+          currentDecks--;
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      for (let i = 1; i <= currentDecks; i++) createDeck(i);
+      setTimeout(() => document.getElementById("splash").style.display = "none", 2000);
+    });
+  </script>
+</body>
+</html>
