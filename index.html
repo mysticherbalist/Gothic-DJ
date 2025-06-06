@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Goth DJ v2.1.1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => console.log("SW registered"));
+    }
+  </script>
+</head>
+<body style="background:black;color:#0ff;text-align:center;font-family:monospace;">
+<div id="splash" style="position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#000;z-index:9999;">
+  <h1>⸸ Loading Gothic DJ... ⸸</h1>
+</div>
+
+<h1>⸸ GOTH DJ v2.1.1 // Bugfix ⸸</h1>
+<div class="controls">
+  <button onclick="addDeck()">Add Deck</button>
+  <button onclick="removeDeck()">Remove Deck</button>
+</div>
+<div id="players"></div>
+
+<script>
+let currentDecks = 4;
+let maxDecks = 12;
+
+function createDeck(i) {
+  const div = document.createElement('div');
+  div.className = 'deck';
+  div.innerHTML = \`
+    <h2>Deck \${i}</h2>
+    <input type="file" accept="audio/*" onchange="loadAudio(event, \${i})"><br>
+    <input type="text" id="ytInput\${i}" placeholder="YouTube URL">
+    <button onclick="loadYouTube(\${i})">Load</button>
+    <div id="ytWrapper\${i}" style="display:none;">
+      <iframe id="yt\${i}" width="300" height="200"></iframe><br>
+      <label><input type="checkbox" onchange="toggleYTVisual(\${i})"> Audio Only</label>
+    </div>
+    <audio id="audio\${i}" controls></audio>
+    <hr>
+  \`;
+  document.getElementById('players').appendChild(div);
+}
+
+function loadAudio(e, i) {
+  const audio = document.getElementById('audio'+i);
+  audio.src = URL.createObjectURL(e.target.files[0]);
+  audio.load();
+}
+
+function loadYouTube(i) {
+  const url = document.getElementById('ytInput'+i).value;
+  const wrapper = document.getElementById('ytWrapper'+i);
+  const iframe = document.getElementById('yt'+i);
+  try {
+    const u = new URL(url);
+    const id = u.hostname === "youtu.be" ? u.pathname.slice(1) : u.searchParams.get("v");
+    iframe.src = "https://www.youtube.com/embed/" + id;
+    wrapper.style.display = "block";
+  } catch {
+    alert("Invalid URL");
+  }
+}
+
+function toggleYTVisual(i) {
+  const iframe = document.getElementById('yt'+i);
+  const chk = event.target.checked;
+  iframe.style.visibility = chk ? "hidden" : "visible";
+  iframe.style.height = chk ? "1px" : "200px";
+}
+
+function addDeck() {
+  if (currentDecks < maxDecks) {
+    currentDecks++;
+    createDeck(currentDecks);
+  }
+}
+
+function removeDeck() {
+  if (currentDecks > 1) {
+    document.getElementById('players').lastChild.remove();
+    currentDecks--;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  for (let i = 1; i <= currentDecks; i++) createDeck(i);
+  setTimeout(() => document.getElementById("splash").style.display = "none", 2000);
+});
+</script>
+</body>
+</html>
